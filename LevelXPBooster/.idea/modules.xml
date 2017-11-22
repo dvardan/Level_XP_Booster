@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/LevelXPBooster.iml" filepath="$PROJECT_DIR$/LevelXPBooster.iml" />
+      <module fileurl="file://C:\Users\dvardan\Documents\GitHub\Level_XP_Booster\Level_XP_Booster\LevelXPBooster\LevelXPBooster.iml" filepath="C:\Users\dvardan\Documents\GitHub\Level_XP_Booster\Level_XP_Booster\LevelXPBooster\LevelXPBooster.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://C:\Users\dvardan\Documents\GitHub\Level_XP_Booster\Level_XP_Booster\LevelXPBooster\app\app.iml" filepath="C:\Users\dvardan\Documents\GitHub\Level_XP_Booster\Level_XP_Booster\LevelXPBooster\app\app.iml" />
     </modules>
   </component>
 </project>
