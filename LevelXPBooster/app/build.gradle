@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.xp.boost.xpboost"
+        applicationId "com.level.xp.booster.levelxpbooster"
         minSdkVersion 15
         targetSdkVersion 26
         versionCode 1
@@ -26,5 +26,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'com.google.android.gms:play-services-ads:11.6.0'
-
+    implementation 'com.google.android.gms:play-services-games:11.6.0'
 }
+apply plugin: 'com.google.gms.google-services'

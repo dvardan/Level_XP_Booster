@@ -25,6 +25,7 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.reward.RewardItem;
 import com.google.android.gms.ads.reward.RewardedVideoAd;
 import com.google.android.gms.ads.reward.RewardedVideoAdListener;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
 
 public class MainActivity extends AppCompatActivity implements RewardedVideoAdListener{

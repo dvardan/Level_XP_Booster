@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "441142877579",
+    "project_id": "level-xp-booster-78259852"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:441142877579:android:ce3cf0a12cf364c8",
+        "android_client_info": {
+          "package_name": "com.level.xp.booster.levelxpbooster"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "441142877579-i3vak273jfjho33beibb0cl6eer76mim.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "441142877579-rsnm2j2q6nibufros6hl9jk10hkq2r10.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.level.xp.booster.levelxpbooster",
+            "certificate_hash": "ad5ca623f7397a7d4acd7feb0bd2f7cd039cd604"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_nHFDEn5kGChZPHMD_odOiwoQbjo6Yjg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
