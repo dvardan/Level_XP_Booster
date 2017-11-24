@@ -10,6 +10,12 @@
     android:background="#42cef4">
 
     <Button
+        android:id="@+id/ach"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAllCaps="true"
+        android:text="Acievments"/>
+    <Button
         android:id="@+id/pressButton"
         android:layout_width="200dp"
         android:layout_height="180dp"
