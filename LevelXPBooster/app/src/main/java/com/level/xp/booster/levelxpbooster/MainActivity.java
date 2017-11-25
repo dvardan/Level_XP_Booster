@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
 import android.widget.Button;
 import android.view.View;
 import android.widget.ImageView;
@@ -25,6 +27,7 @@ import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
+import com.google.android.gms.plus.Plus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -37,9 +40,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     private static final int RC_SIGN_IN = 1;
     private GoogleSignInClient mClient;
     private RewardedVideoAd mRewardedVideoAd;
-    private GoogleApiClient mApiClient;
+    private GoogleApiClient mGoogleApiClient;
 
     private static final int RC_ACHIEVEMENT_UI = 9003;
+    private static final int RC_LEADERBOARD_UI = 9004;
+
 
 
     @Override
@@ -67,6 +72,16 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         }
 
 
+
+
+
+        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+                .setGravityForPopups(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
+                .addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
+                .addApi(Games.API).addScope(Games.SCOPE_GAMES)
+                .build();
+
+
         Button ach = (Button)findViewById(R.id.ach);
         ach.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,7 +93,10 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                 bayc pti achievmentneri window baci
                 ha u indz tvuma et client id maydii het a kapvac
                 es functionn el amenatakn em decler arel*/
-                showAchievements();
+                mGoogleApiClient.connect();
+                System.out.println("after connect");
+                //showAchievements();
+                showLeaderboard();
 
             }
         });
@@ -316,17 +334,29 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
 /////////////////////////////////////////////////
     private void showAchievements() {
+        System.out.println("start showAchievements");
         Games.getAchievementsClient(this, GoogleSignIn.getLastSignedInAccount(this))
             .getAchievementsIntent()
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
                 @Override
                 public void onSuccess(Intent intent) {
+                    System.out.println("in onSuccess");
                     startActivityForResult(intent, RC_ACHIEVEMENT_UI);
                 }
             });
 
 
 }
+    private void showLeaderboard() {
+        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .getLeaderboardIntent(getString(R.string.leaderboard_lead))
+                .addOnSuccessListener(new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_LEADERBOARD_UI);
+                    }
+                });
+    }
 
 
 
