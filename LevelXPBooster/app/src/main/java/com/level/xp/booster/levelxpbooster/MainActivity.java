@@ -23,16 +23,20 @@ import android.support.annotation.NonNull;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
+import com.google.android.gms.games.achievement.Achievements;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.nio.BufferUnderflowException;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements RewardedVideoAdListener{
     Button pressButton;
@@ -40,7 +44,15 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     private static final int RC_SIGN_IN = 1;
     private GoogleSignInClient mClient;
     private RewardedVideoAd mRewardedVideoAd;
-    private GoogleApiClient mGoogleApiClient;
+    private GoogleApiClient mGoogleClient;
+    private GoogleSignInAccount acct;
+
+    private AchievementsClient mAchievementsClient;
+
+
+
+
+    private static final int RC_UNUSED = 5001;
 
     private static final int RC_ACHIEVEMENT_UI = 9003;
     private static final int RC_LEADERBOARD_UI = 9004;
@@ -73,30 +85,28 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
 
 
-
-
-        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
-                .setGravityForPopups(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
-                .addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
-                .addApi(Games.API).addScope(Games.SCOPE_GAMES)
-                .build();
-
-
         Button ach = (Button)findViewById(R.id.ach);
         ach.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(MainActivity.this);
-                //Games.getAchievementsClient(MainActivity.this,acct).unlock(getString(R.string.achievement_5_click));
 
-             /*   Nar urem@ es function@ kancheluc error a tali, chem jogum inch a
-                bayc pti achievmentneri window baci
-                ha u indz tvuma et client id maydii het a kapvac
-                es functionn el amenatakn em decler arel*/
-                mGoogleApiClient.connect();
-                System.out.println("after connect");
+
+
+
+                GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(MainActivity.this);
+
+
+
+
+                Toast.makeText(MainActivity.this,acct.getEmail().toString(),Toast.LENGTH_LONG).show();
+
+
+                Games.getAchievementsClient(MainActivity.this,acct)
+                        .unlock(getString(R.string.achievement_5_click));
                 //showAchievements();
-                showLeaderboard();
+                //showLeaderboard();
+                //GoogleSignIn.getLastSignedInAccount(MainActivity.this);
+
 
             }
         });
@@ -334,29 +344,21 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
 /////////////////////////////////////////////////
     private void showAchievements() {
-        System.out.println("start showAchievements");
-        Games.getAchievementsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+
+        Games.getAchievementsClient(this,acct)
             .getAchievementsIntent()
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
                 @Override
                 public void onSuccess(Intent intent) {
-                    System.out.println("in onSuccess");
-                    startActivityForResult(intent, RC_ACHIEVEMENT_UI);
+                    startActivityForResult(intent, RC_UNUSED);
                 }
             });
 
 
+
 }
-    private void showLeaderboard() {
-        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .getLeaderboardIntent(getString(R.string.leaderboard_lead))
-                .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                    @Override
-                    public void onSuccess(Intent intent) {
-                        startActivityForResult(intent, RC_LEADERBOARD_UI);
-                    }
-                });
-    }
+
+
 
 
 
