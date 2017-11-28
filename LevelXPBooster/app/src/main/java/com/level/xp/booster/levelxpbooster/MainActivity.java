@@ -27,6 +27,8 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesStatusCodes;
+import com.google.android.gms.games.LeaderboardsClient;
+import com.google.android.gms.games.PlayersClient;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
 import com.google.android.gms.games.achievement.Achievements;
@@ -34,28 +36,67 @@ import com.google.android.gms.plus.Plus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.level.xp.booster.levelxpbooster.MainMenuFragment.Listener;
 
 import java.nio.BufferUnderflowException;
 import java.util.concurrent.TimeUnit;
 
-public class MainActivity extends AppCompatActivity implements RewardedVideoAdListener{
-    Button pressButton;
-    private int k;
-    private static final int RC_SIGN_IN = 1;
-    private GoogleSignInClient mClient;
+
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.games.AchievementsClient;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.LeaderboardsClient;
+import com.google.android.gms.games.Player;
+import com.google.android.gms.games.PlayersClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+
+public class MainActivity extends AppCompatActivity implements RewardedVideoAdListener, Listener{
+    private Button pressButton;
+    private int score;
     private RewardedVideoAd mRewardedVideoAd;
-    private GoogleApiClient mGoogleClient;
-    private GoogleSignInAccount acct;
 
+
+    // Fragments
+    private MainMenuFragment mMainMenuFragment;
+
+    // Client used to sign in with Google APIs
+    private GoogleSignInClient mGoogleSignInClient;
+
+    // Client variables
     private AchievementsClient mAchievementsClient;
+    private LeaderboardsClient mLeaderboardsClient;
+    private PlayersClient mPlayersClient;
 
-
-
-
+    // request codes we use when invoking an external activity
     private static final int RC_UNUSED = 5001;
+    private static final int RC_SIGN_IN = 9001;
 
-    private static final int RC_ACHIEVEMENT_UI = 9003;
-    private static final int RC_LEADERBOARD_UI = 9004;
+    // tag for debug logging
+    private static final String TAG = "TanC";
+
+    // achievements and scores we're pending to push to the cloud
+    // (waiting for the user to sign in, for instance)
+    private final AccomplishmentsOutbox mOutbox = new AccomplishmentsOutbox();
+
+
+
 
 
 
@@ -64,98 +105,100 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Configure Google Sign In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
 
-        mClient = GoogleSignIn.getClient(MainActivity.this, gso);
 
-        if(!isSignedIn()){
-            signIn();
+        // Create the client used to sign in to Google services.
+        mGoogleSignInClient = GoogleSignIn.getClient(this,
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).build());
 
+        signIn();
+        // Create the fragments used by the UI.
+        mMainMenuFragment = new MainMenuFragment();
 
 
 
-        }
-        else{
+        // Set the listeners and callbacks of fragment events.
+        mMainMenuFragment.setListener(this);
 
-        }
+        getSupportFragmentManager().beginTransaction().add(R.id.fragment_container,
+                mMainMenuFragment).commit();
 
 
-
-        Button ach = (Button)findViewById(R.id.ach);
-        ach.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+    }
 
 
 
+    private void switchToFragment(Fragment newFrag) {
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, newFrag)
+                .commit();
+    }
 
-                GoogleSignInAccount acct = GoogleSignIn.getLastSignedInAccount(MainActivity.this);
+    private boolean isSignedIn() {
+        return GoogleSignIn.getLastSignedInAccount(this) != null;
+    }
+
+    private void signInSilently() {
+        Log.d(TAG, "signInSilently()");
+
+        mGoogleSignInClient.silentSignIn().addOnCompleteListener(this,
+                new OnCompleteListener<GoogleSignInAccount>() {
+                    @Override
+                    public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "signInSilently(): success");
+                            onConnected(task.getResult());
+                        } else {
+                            Log.d(TAG, "signInSilently(): failure", task.getException());
+                            onDisconnected();
+                        }
+                    }
+                });
+    }
+
+    private void startSignInIntent() {
+        startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN);
+    }
 
 
-
-
-                Toast.makeText(MainActivity.this,acct.getEmail().toString(),Toast.LENGTH_LONG).show();
-
-
-                Games.getAchievementsClient(MainActivity.this,acct)
-                        .unlock(getString(R.string.achievement_5_click));
-                //showAchievements();
-                //showLeaderboard();
-                //GoogleSignIn.getLastSignedInAccount(MainActivity.this);
-
-
-            }
-        });
-
-
-
-
-
-
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart()");
 
 
         SharedPreferences sp = getSharedPreferences("your_prefs", Activity.MODE_PRIVATE);
         int myIntValue = sp.getInt("points", 0);
-        k = myIntValue;
-
+        score = myIntValue;
+        System.out.println("stegh ay");
         pressButton = (Button)findViewById(R.id.pressButton);
-        if(k != 0){
-            pressButton.setText(Integer.toString(k));
+        if(score != 0){
+            pressButton.setText(Integer.toString(score));
         }
         pressButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                k++;
-                pressButton.setText(Integer.toString(k));
+                score++;
+                pressButton.setText(Integer.toString(score));
+                checkForAchievements(score);
 
             }
         });
 
-        final AdView adView = (AdView)findViewById(R.id.adView);
 
-        //Change to real banner
+        final AdView adView = (AdView)findViewById(R.id.adView);
+        //Change to the real banner
         AdRequest adRequest = new AdRequest.Builder().addTestDevice("33BE2250B43518CCDA7DE426D04EE232").build();
         adView.loadAd(adRequest);
-
-
         mRewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this);
         mRewardedVideoAd.setRewardedVideoAdListener(this);
-
         loadRewardedVideoAd();
-
         ImageView splash = (ImageView)findViewById(R.id.bigSplash);
         splash.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (mRewardedVideoAd.isLoaded()) {
                     mRewardedVideoAd.show();
-
                 }
-
             }
         });
         ImageView splash1 = (ImageView)findViewById(R.id.splash1);
@@ -164,9 +207,7 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             public void onClick(View view) {
                 if (mRewardedVideoAd.isLoaded()) {
                     mRewardedVideoAd.show();
-
                 }
-
             }
         });
         ImageView splash2 = (ImageView)findViewById(R.id.splash2);
@@ -175,18 +216,272 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             public void onClick(View view) {
                 if (mRewardedVideoAd.isLoaded()) {
                     mRewardedVideoAd.show();
-
                 }
-
             }
         });
 
 
 
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume()");
+
+        // Since the state of the signed in user can change when the activity is not active
+        // it is recommended to try and sign in silently from when the app resumes.
+        signInSilently();
+    }
+
+    private void signOut() {
+        Log.d(TAG, "signOut()");
+
+        if (!isSignedIn()) {
+            Log.w(TAG, "signOut() called, but was not signed in!");
+            return;
+        }
+
+        mGoogleSignInClient.signOut().addOnCompleteListener(this,
+                new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        boolean successful = task.isSuccessful();
+                        Log.d(TAG, "signOut(): " + (successful ? "success" : "failed"));
+
+                        onDisconnected();
+                    }
+                });
+    }
+
+
+    @Override
+    public void onShowAchievementsRequested() {
+        mAchievementsClient.getAchievementsIntent()
+                .addOnSuccessListener(new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_UNUSED);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        handleException(e, getString(R.string.achievements_exception));
+                    }
+                });
+    }
+
+
+/*
+    @Override
+    public void onShowLeaderboardsRequested() {
+        mLeaderboardsClient.getAllLeaderboardsIntent()
+                .addOnSuccessListener(new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_UNUSED);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        handleException(e, getString(R.string.leaderboards_exception));
+                    }
+                });
+    }
+
+
+
+*/
+
+    private void handleException(Exception e, String details) {
+        int status = 0;
+
+        if (e instanceof ApiException) {
+            ApiException apiException = (ApiException) e;
+            status = apiException.getStatusCode();
+        }
+
+        String message = getString(R.string.status_exception_error, details, status, e);
+
+        new AlertDialog.Builder(MainActivity.this)
+                .setMessage(message)
+                .setNeutralButton(android.R.string.ok, null)
+                .show();
+    }
+
+    private void checkForAchievements(int score) {
+        // Check if each condition is met; if so, unlock the corresponding
+        // achievement.
+        if (score == 5) {
+            mOutbox.ach1 = true;
+            achievementToast(getString(R.string.achievement_5_click));
+        }
+        if (score == 50) {
+            mOutbox.ach2 = true;
+            achievementToast(getString(R.string.achievement_50_click));
+        }
+        if (score == 100) {
+            mOutbox.ach3 = true;
+            achievementToast(getString(R.string.achievement_100_click));
+        }
+        if (score == 200) {
+            mOutbox.ach4 = true;
+            achievementToast(getString(R.string.achievement_200_click));
+        }
+        if (score == 500) {
+            mOutbox.ach4 = true;
+            achievementToast(getString(R.string.achievement_500_click));
+        }
+    }
+
+
+    private void achievementToast(String achievement) {
+        // Only show toast if not signed in. If signed in, the standard Google Play
+        // toasts will appear, so we don't need to show our own.
+        if (!isSignedIn()) {
+            Toast.makeText(this, getString(R.string.achievement) + ": " + achievement,
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+
+    private void pushAccomplishments() {
+        if (!isSignedIn()) {
+            // can't push to the cloud, try again later
+            return;
+        }
+        if (mOutbox.ach1) {
+            mAchievementsClient.unlock(getString(R.string.achievement_5_click));
+            mOutbox.ach1 = false;
+        }
+        if (mOutbox.ach2) {
+            mAchievementsClient.unlock(getString(R.string.achievement_50_click));
+            mOutbox.ach2 = false;
+        }
+        if (mOutbox.ach3) {
+            mAchievementsClient.unlock(getString(R.string.achievement_100_click));
+            mOutbox.ach3 = false;
+        }
+        if (mOutbox.ach4) {
+            mAchievementsClient.unlock(getString(R.string.achievement_200_click));
+            mOutbox.ach4 = false;
+        }
+        if (mOutbox.ach5) {
+            mAchievementsClient.unlock(getString(R.string.achievement_500_click));
+            mOutbox.ach5 = false;
+        }
 
 
     }
+
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task =
+                    GoogleSignIn.getSignedInAccountFromIntent(intent);
+
+            try {
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                onConnected(account);
+            } catch (ApiException apiException) {
+                String message = apiException.getMessage();
+                if (message == null || message.isEmpty()) {
+                    message = getString(R.string.signin_other_error);
+                }
+
+                onDisconnected();
+
+                new AlertDialog.Builder(this)
+                        .setMessage(message)
+                        .setNeutralButton(android.R.string.ok, null)
+                        .show();
+            }
+        }
+    }
+
+
+    private void onConnected(GoogleSignInAccount googleSignInAccount) {
+        Log.d(TAG, "onConnected(): connected to Google APIs");
+
+        mAchievementsClient = Games.getAchievementsClient(this, googleSignInAccount);
+        mLeaderboardsClient = Games.getLeaderboardsClient(this, googleSignInAccount);
+        mPlayersClient = Games.getPlayersClient(this, googleSignInAccount);
+
+        // Show sign-out button on main menu
+        mMainMenuFragment.setShowSignInButton(false);
+
+        // Show "you are signed in" message on win screen, with no sign in button.
+
+        // Set the greeting appropriately on main menu
+        mPlayersClient.getCurrentPlayer()
+                .addOnCompleteListener(new OnCompleteListener<Player>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Player> task) {
+                        String displayName;
+                        if (task.isSuccessful()) {
+                            displayName = task.getResult().getDisplayName();
+                        } else {
+                            Exception e = task.getException();
+                            handleException(e, getString(R.string.players_exception));
+                            displayName = "???";
+                        }
+                        mMainMenuFragment.setGreeting("Hello, " + displayName);
+                    }
+                });
+
+
+        // if we have accomplishments to push, push them
+        if (!mOutbox.isEmpty()) {
+            pushAccomplishments();
+            Toast.makeText(this, getString(R.string.your_progress_will_be_uploaded),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+    private void onDisconnected() {
+        Log.d(TAG, "onDisconnected()");
+
+        mAchievementsClient = null;
+        mLeaderboardsClient = null;
+        mPlayersClient = null;
+
+        // Show sign-in button on main menu
+        mMainMenuFragment.setShowSignInButton(true);
+
+        // Show sign-in button on win screen
+
+        mMainMenuFragment.setGreeting(getString(R.string.signed_out_greeting));
+    }
+
+
+
+
+    @Override
+    public void onSignInButtonClicked() {
+        startSignInIntent();
+    }
+
+    @Override
+    public void onSignOutButtonClicked() {
+        signOut();
+    }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -194,28 +489,23 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         mRewardedVideoAd.loadAd("ca-app-pub-3940256099942544/5224354917",
                 new AdRequest.Builder().build());
     }
-
-
     @Override
     public void onRewardedVideoAdLoaded() {
 
         System.out.println("onRewardedVideoAdLoaded");
 
     }
-
     @Override
     public void onRewardedVideoAdOpened() {
 
         System.out.println("onRewardedVideoAdOpened");
 
     }
-
     @Override
     public void onRewardedVideoStarted() {
         System.out.println("onRewardedVideoStarted");
 
     }
-
     @Override
     public void onRewardedVideoAdClosed() {
         System.out.println("onRewardedVideoAdClosed");
@@ -223,19 +513,17 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                 new AdRequest.Builder().build());
 
     }
-
     @Override
     public void onRewarded(RewardItem rewardItem) {
         System.out.println("onRewarded");
         mRewardedVideoAd.loadAd("ca-app-pub-3940256099942544/5224354917",
                 new AdRequest.Builder().build());
-        k = k + 200;
-        pressButton.setText(Integer.toString(k));
+        score = score + 200;
+        pressButton.setText(Integer.toString(score));
 
 
 
     }
-
     @Override
     public void onRewardedVideoAdLeftApplication() {
         System.out.println("onRewardedVideoAdLeftApplication");
@@ -244,7 +532,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
 
     }
-
     @Override
     public void onRewardedVideoAdFailedToLoad(int i) {
         System.out.println("onRewardedVideoAdFailedToLoad");
@@ -253,113 +540,57 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
 
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
         SharedPreferences sp = getSharedPreferences("your_prefs", Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
-        editor.putInt("points", k);
+        editor.putInt("points", score);
         editor.commit();
 
     }
-
     @Override
     protected void onStop() {
         super.onStop();
         SharedPreferences sp = getSharedPreferences("your_prefs", Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
-        editor.putInt("points", k);
+        editor.putInt("points", score);
         editor.commit();
 
     }
 
+    @Override
+    public void onStartGameRequested(boolean hardMode) {
 
-    //// Methods For Sign In
+    }
+
+
+    @Override
+    public void onShowLeaderboardsRequested() {
+
+    }
+
+
+
+
+
+
+    private class AccomplishmentsOutbox {
+        boolean ach1 = false;
+        boolean ach2 = false;
+        boolean ach3 = false;
+        boolean ach4 = false;
+        boolean ach5 = false;
+
+        boolean isEmpty() {
+            return !ach1 && !ach2 && !ach3 && !ach4 && !ach5;
+        }
+
+    }
     private void signIn() {
-        Intent signInIntent = mClient.getSignInIntent();
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach
-            // a listener.
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
-        }
-    }
-
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        try {
-            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-
-            // Signed in successfully, show authenticated UI.
-
-        } catch (ApiException e) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
-
-        }
-    }
-
-
-
-
-
-
-
-    private void signInSilently() {
-        GoogleSignInClient signInClient = GoogleSignIn.getClient(this,
-                GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-        signInClient.silentSignIn().addOnCompleteListener(this,
-                new OnCompleteListener<GoogleSignInAccount>() {
-                    @Override
-                    public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
-                        if (task.isSuccessful()) {
-
-                            GoogleSignInAccount signedInAccount = task.getResult();
-                            Toast.makeText(MainActivity.this,signedInAccount.getEmail().toString(), Toast.LENGTH_LONG).show();
-
-                        } else {
-                            // Player will need to sign-in explicitly using via UI
-                        }
-                    }
-                });
-    }
-    private boolean isSignedIn(){
-        return GoogleSignIn.getLastSignedInAccount(this) != null;
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        //signInSilently();
-    }
-
-
-/////////////////////////////////////////////////
-    private void showAchievements() {
-
-        Games.getAchievementsClient(this,acct)
-            .getAchievementsIntent()
-            .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                @Override
-                public void onSuccess(Intent intent) {
-                    startActivityForResult(intent, RC_UNUSED);
-                }
-            });
-
-
-
-}
-
-
-
 
 
 }
