@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -78,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     private RewardedVideoAd mRewardedVideoAd;
 
 
+
     // Fragments
     private MainMenuFragment mMainMenuFragment;
 
@@ -110,19 +112,20 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Hide the top Title bar
         getSupportActionBar().hide();
+        //To Full Screen
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-
-
-
 
         // Create the client used to sign in to Google services.
         mGoogleSignInClient = GoogleSignIn.getClient(this,
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN).build());
 
+        //Sign in
         signIn();
+
         // Create the fragments used by the UI.
         mMainMenuFragment = new MainMenuFragment();
 
@@ -131,38 +134,18 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         // Set the listeners and callbacks of fragment events.
         mMainMenuFragment.setListener(this);
 
+        //Set Fragment
         getSupportFragmentManager().beginTransaction().add(R.id.fragment_container,
                 mMainMenuFragment).commit();
-
-
-
-
-
     }
 
-    private void showLeaderboard() {
-        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .getLeaderboardIntent(getString(R.string.leaderboard_score))
-                .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                    @Override
-                    public void onSuccess(Intent intent) {
-                        startActivityForResult(intent, RC_LEADERBOARD_UI);
-                    }
-                });
-    }
 
-    private void switchToFragment(Fragment newFrag) {
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, newFrag)
-                .commit();
-    }
 
-    private boolean isSignedIn() {
-        return GoogleSignIn.getLastSignedInAccount(this) != null;
-    }
-
-    private void updateLeaderboard(int score){
-        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .submitScore(getString(R.string.leaderboard_score), score);
+    private void updateLeaderboard(int score) {
+        if (GoogleSignIn.getLastSignedInAccount(this) != null){
+            Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                    .submitScore(getString(R.string.leaderboard_score), score);
+        }
     }
 
     private void signInSilently() {
@@ -192,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "onStart()");
-
+        final MediaPlayer[] player = {MediaPlayer.create(this, R.raw.button_click)};
 
         SharedPreferences sp = getSharedPreferences("your_prefs", Activity.MODE_PRIVATE);
         int myIntValue = sp.getInt("points", 0);
@@ -207,9 +190,13 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             public void onClick(View view) {
 
                 if(isNetworkConnected()) {
+                    player[0].reset();
+                    player[0] = MediaPlayer.create(MainActivity.this,R.raw.button_click);
+                    player[0].start();
                     score++;
                     pressButton.setText(Integer.toString(score));
                     checkForAchievements(score);
+                    updateLeaderboard(score);
 
                 }
                 else{
@@ -321,27 +308,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     }
 
 
-/*
-    @Override
-    public void onShowLeaderboardsRequested() {
-        mLeaderboardsClient.getAllLeaderboardsIntent()
-                .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                    @Override
-                    public void onSuccess(Intent intent) {
-                        startActivityForResult(intent, RC_UNUSED);
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        handleException(e, getString(R.string.leaderboards_exception));
-                    }
-                });
-    }
-
-
-
-*/
 
     private void handleException(Exception e, String details) {
         int status = 0;
@@ -366,25 +332,49 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             mOutbox.ach1 = true;
             achievementToast(getString(R.string.achievement_5_click));
         }
+        else
+        {
+            return;
+        }
         if (score >= 50) {
             mOutbox.ach2 = true;
             achievementToast(getString(R.string.achievement_50_click));
+        }
+        else
+        {
+            return;
         }
         if (score >= 100) {
             mOutbox.ach3 = true;
             achievementToast(getString(R.string.achievement_100_click));
         }
+        else
+        {
+            return;
+        }
         if (score >= 110) {
             mOutbox.ach4 = true;
             achievementToast(getString(R.string.achievement_200_click));
+        }
+        else
+        {
+            return;
         }
         if (score >= 120) {
             mOutbox.ach5 = true;
             achievementToast(getString(R.string.achievement_500_click));
         }
+        else
+        {
+            return;
+        }
         if (score >= 130) {
             mOutbox.ach6 = true;
             achievementToast(getString(R.string.achievement_600));
+        }
+        else
+        {
+            return;
         }
 
     }
@@ -520,10 +510,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     public void onSignInButtonClicked() {
         startSignInIntent();
     }
-
-
-
-
     private void loadRewardedVideoAd() {
         mRewardedVideoAd.loadAd("ca-app-pub-3940256099942544/5224354917",
                 new AdRequest.Builder().build());
@@ -595,8 +581,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         SharedPreferences.Editor editor = sp.edit();
         editor.putInt("points", score);
         editor.commit();
-        updateLeaderboard(score);
-
 
     }
 
@@ -619,15 +603,34 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         }
 
     }
+    // Sign in Method
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
+    //Check Network connection
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         return cm.getActiveNetworkInfo() != null;
+    }
+
+    //Is user Signed in?
+    private boolean isSignedIn() {
+
+        return GoogleSignIn.getLastSignedInAccount(this) != null;
+    }
+    //Show Leaderboard method
+    private void showLeaderboard() {
+        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .getLeaderboardIntent(getString(R.string.leaderboard_score))
+                .addOnSuccessListener(new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_LEADERBOARD_UI);
+                    }
+                });
     }
 
 }
