@@ -20,6 +20,6 @@ Save this file as res/values/games-ids.xml in your project.
     <string name="achievement_500_click" translatable="false">CgkIi7uosesMEAIQBw</string>
 
     <string name="achievement_600" translatable="false">CgkIi7uosesMEAIQCQ</string>
-    <!-- leaderboard Lead -->
-    <string name="leaderboard_lead" translatable="false">CgkIi7uosesMEAIQCA</string>
+    <!-- leaderboard Score -->
+    <string name="leaderboard_score" translatable="false">CgkIi7uosesMEAIQDg</string>
 </resources>

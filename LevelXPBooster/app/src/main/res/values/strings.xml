@@ -9,4 +9,7 @@
     <string name="signed_out_greeting">Hello, anonymous user (not signed in)!</string>
 
     <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string> <!--change to real banner id-->
+    <string name="MainButtonText">Press</string>
+    <string name="AchievmentsButtonText">Achievements</string>
+    <string name="LeaderboardButtonText">Leaderboard</string>
 </resources>

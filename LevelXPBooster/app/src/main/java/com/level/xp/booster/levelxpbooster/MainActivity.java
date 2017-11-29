@@ -1,12 +1,16 @@
 package com.level.xp.booster.levelxpbooster;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.view.View;
 import android.widget.ImageView;
@@ -88,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     // request codes we use when invoking an external activity
     private static final int RC_UNUSED = 5001;
     private static final int RC_SIGN_IN = 9001;
+    private static final int RC_LEADERBOARD_UI = 9004;
+
 
     // tag for debug logging
     private static final String TAG = "TanC";
@@ -104,7 +110,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().hide();
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
+
 
 
 
@@ -125,9 +135,21 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                 mMainMenuFragment).commit();
 
 
+
+
+
     }
 
-
+    private void showLeaderboard() {
+        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .getLeaderboardIntent(getString(R.string.leaderboard_score))
+                .addOnSuccessListener(new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_LEADERBOARD_UI);
+                    }
+                });
+    }
 
     private void switchToFragment(Fragment newFrag) {
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, newFrag)
@@ -136,6 +158,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
     private boolean isSignedIn() {
         return GoogleSignIn.getLastSignedInAccount(this) != null;
+    }
+
+    private void updateLeaderboard(int score){
+        Games.getLeaderboardsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .submitScore(getString(R.string.leaderboard_score), score);
     }
 
     private void signInSilently() {
@@ -178,9 +205,16 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         pressButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                score++;
-                pressButton.setText(Integer.toString(score));
-                checkForAchievements(score);
+
+                if(isNetworkConnected()) {
+                    score++;
+                    pressButton.setText(Integer.toString(score));
+                    checkForAchievements(score);
+
+                }
+                else{
+                    Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
+                }
 
             }
         });
@@ -220,6 +254,19 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                 }
             }
         });
+
+        ImageView leaderboard = (ImageView)findViewById(R.id.show_leaderboard_button);
+        leaderboard.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                updateLeaderboard(score);
+                showLeaderboard();
+            }
+        });
+
+
+
+
 
 
 
@@ -315,32 +362,28 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     private void checkForAchievements(int score) {
         // Check if each condition is met; if so, unlock the corresponding
         // achievement.
-        if (score == 5) {
+        if (score >= 5) {
             mOutbox.ach1 = true;
             achievementToast(getString(R.string.achievement_5_click));
         }
-        if (score == 50) {
+        if (score >= 50) {
             mOutbox.ach2 = true;
             achievementToast(getString(R.string.achievement_50_click));
         }
-        if (score == 100) {
+        if (score >= 100) {
             mOutbox.ach3 = true;
             achievementToast(getString(R.string.achievement_100_click));
         }
-        if (score == 110) {
+        if (score >= 110) {
             mOutbox.ach4 = true;
             achievementToast(getString(R.string.achievement_200_click));
         }
-        if (score == 120) {
-            mAchievementsClient.unlock(getString(R.string.achievement_500_click));
-            achievementToast("kov");
-            mOutbox.ach4 = true;
+        if (score >= 120) {
+            mOutbox.ach5 = true;
             achievementToast(getString(R.string.achievement_500_click));
         }
-        if (score == 130) {
-            mAchievementsClient.unlock(getString(R.string.achievement_600));
-
-            mOutbox.ach4 = true;
+        if (score >= 130) {
+            mOutbox.ach6 = true;
             achievementToast(getString(R.string.achievement_600));
         }
 
@@ -382,6 +425,10 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         if (mOutbox.ach5) {
             mAchievementsClient.unlock(getString(R.string.achievement_500_click));
             mOutbox.ach5 = false;
+        }
+        if (mOutbox.ach6) {
+            mAchievementsClient.unlock(getString(R.string.achievement_600));
+            mOutbox.ach6 = false;
         }
 
 
@@ -548,6 +595,8 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         SharedPreferences.Editor editor = sp.edit();
         editor.putInt("points", score);
         editor.commit();
+        updateLeaderboard(score);
+
 
     }
 
@@ -562,9 +611,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         boolean ach3 = false;
         boolean ach4 = false;
         boolean ach5 = false;
+        boolean ach6 = false;
+
 
         boolean isEmpty() {
-            return !ach1 && !ach2 && !ach3 && !ach4 && !ach5;
+            return !ach1 && !ach2 && !ach3 && !ach4 && !ach5 && !ach6;
         }
 
     }
@@ -573,6 +624,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        return cm.getActiveNetworkInfo() != null;
+    }
 
 }
 
