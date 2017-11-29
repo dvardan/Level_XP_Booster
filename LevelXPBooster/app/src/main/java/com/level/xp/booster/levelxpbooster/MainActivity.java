@@ -24,6 +24,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.GamesStatusCodes;
@@ -326,14 +327,23 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             mOutbox.ach3 = true;
             achievementToast(getString(R.string.achievement_100_click));
         }
-        if (score == 200) {
+        if (score == 110) {
             mOutbox.ach4 = true;
             achievementToast(getString(R.string.achievement_200_click));
         }
-        if (score == 500) {
+        if (score == 120) {
+            mAchievementsClient.unlock(getString(R.string.achievement_500_click));
+            achievementToast("kov");
             mOutbox.ach4 = true;
             achievementToast(getString(R.string.achievement_500_click));
         }
+        if (score == 130) {
+            mAchievementsClient.unlock(getString(R.string.achievement_600));
+
+            mOutbox.ach4 = true;
+            achievementToast(getString(R.string.achievement_600));
+        }
+
     }
 
 
@@ -424,15 +434,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                 .addOnCompleteListener(new OnCompleteListener<Player>() {
                     @Override
                     public void onComplete(@NonNull Task<Player> task) {
-                        String displayName;
                         if (task.isSuccessful()) {
-                            displayName = task.getResult().getDisplayName();
                         } else {
                             Exception e = task.getException();
                             handleException(e, getString(R.string.players_exception));
-                            displayName = "???";
                         }
-                        mMainMenuFragment.setGreeting("Hello, " + displayName);
                     }
                 });
 
@@ -458,7 +464,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
         // Show sign-in button on win screen
 
-        mMainMenuFragment.setGreeting(getString(R.string.signed_out_greeting));
     }
 
 
@@ -468,19 +473,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     public void onSignInButtonClicked() {
         startSignInIntent();
     }
-
-    @Override
-    public void onSignOutButtonClicked() {
-        signOut();
-    }
-
-
-
-
-
-
-
-
 
 
 
@@ -556,17 +548,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         SharedPreferences.Editor editor = sp.edit();
         editor.putInt("points", score);
         editor.commit();
-
-    }
-
-    @Override
-    public void onStartGameRequested(boolean hardMode) {
-
-    }
-
-
-    @Override
-    public void onShowLeaderboardsRequested() {
 
     }
 
