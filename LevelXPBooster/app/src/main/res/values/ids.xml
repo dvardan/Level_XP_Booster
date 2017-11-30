@@ -7,19 +7,24 @@ Save this file as res/values/games-ids.xml in your project.
     <!-- app_id -->
     <string name="app_id" translatable="false">441142877579</string>
     <!-- package_name -->
-    <string name="package_name" translatable="false">com.level.xp.booster.levelxpbooster</string>
     <!-- achievement 5 click -->
     <string name="achievement_5_click" translatable="false">CgkIi7uosesMEAIQAA</string>
-    <!-- achievement 50 click -->
-    <string name="achievement_50_click" translatable="false">CgkIi7uosesMEAIQAQ</string>
-    <!-- achievement 100 click -->
-    <string name="achievement_100_click" translatable="false">CgkIi7uosesMEAIQBQ</string>
-    <!-- achievement 200 click -->
-    <string name="achievement_200_click" translatable="false">CgkIi7uosesMEAIQBg</string>
-    <!-- achievement 500 click -->
-    <string name="achievement_500_click" translatable="false">CgkIi7uosesMEAIQBw</string>
-
-    <string name="achievement_600" translatable="false">CgkIi7uosesMEAIQCQ</string>
+    <!-- achievement 206 click -->
+    <string name="achievement_206_click" translatable="false">CgkIi7uosesMEAIQAQ</string>
+    <!-- achievement 407 click -->
+    <string name="achievement_407_click" translatable="false">CgkIi7uosesMEAIQBQ</string>
+    <!-- achievement 608 click -->
+    <string name="achievement_608_click" translatable="false">CgkIi7uosesMEAIQBg</string>
+    <!-- achievement 809 click -->
+    <string name="achievement_809_click" translatable="false">CgkIi7uosesMEAIQBw</string>
+    <!-- achievement 910 click -->
+    <string name="achievement_910_click" translatable="false">CgkIi7uosesMEAIQCQ</string>
+    <!-- achievement 1111 click -->
+    <string name="achievement_1111_click" translatable="false">CgkIi7uosesMEAIQCg</string>
+    <!-- achievement 1312 click -->
+    <string name="achievement_1312_click" translatable="false">CgkIi7uosesMEAIQCw</string>
+    <!-- achievement 1513 click -->
+    <string name="achievement_1513_click" translatable="false">CgkIi7uosesMEAIQDA</string>
     <!-- leaderboard Score -->
     <string name="leaderboard_score" translatable="false">CgkIi7uosesMEAIQDg</string>
 </resources>
