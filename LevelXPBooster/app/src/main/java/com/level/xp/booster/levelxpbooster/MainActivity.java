@@ -24,10 +24,17 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import android.support.annotation.NonNull;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.games.LeaderboardsClient;
 import com.google.android.gms.games.PlayersClient;
+import com.google.android.gms.games.leaderboard.LeaderboardScore;
+import com.google.android.gms.games.leaderboard.LeaderboardVariant;
+import com.google.android.gms.games.leaderboard.Leaderboards;
+import com.google.android.gms.plus.Plus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -51,11 +58,14 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     protected static final int RC_SIGN_IN = 9001;
     protected static final int RC_LEADERBOARD_UI = 9004;
     // tag for debug logging
-    protected static final String TAG = "TanC";
     // achievements and scores we're pending to push to the cloud
     // (waiting for the user to sign in, for instance)
 
     protected GoogleSignInAccount myAccount;
+    private Toast toast;
+
+    private GoogleApiClient mGoogleApiClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +84,21 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         //Sign in
         signInSilently();
         signIn();
+
+/*
+
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
+                .addConnectionCallbacks((GoogleApiClient.ConnectionCallbacks) this)
+                .addOnConnectionFailedListener((GoogleApiClient.OnConnectionFailedListener) this)
+                .addApi(Plus.API).addScope(Plus.SCOPE_PLUS_LOGIN)
+                .addApi(Games.API).addScope(Games.SCOPE_GAMES)
+                .addApi(Drive.API).addScope(Drive.SCOPE_APPFOLDER)
+                .setViewForPopups(findViewById(android.R.id.content))
+                .build();
+*/
+
+
     }
 
     protected void signInSilently() {
@@ -84,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                         @Override
                         public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
                             if (task.isSuccessful()) {
-                                Log.d(TAG, "signInSilently(): success");
                                 onConnected(task.getResult());
                             } /*else {
                             Log.d(TAG, "signInSilently(): failure", task.getException());
@@ -94,7 +118,12 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                     });
         }
         else{
-            Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
+            if(toast != null) {
+                toast.cancel();
+            }
+            toast = Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT);
+            toast.show();
+            //Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
         }
     }
     @Override
@@ -109,13 +138,12 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         //Declerating Mediplayer for button click audio
         final MediaPlayer[] player = {MediaPlayer.create(this, R.raw.button_click)};
 
-
-
-        player[0].setVolume(0.3f,0.3f);
         //Getting saved data
         SharedPreferences sp = getSharedPreferences("your_prefs", Activity.MODE_PRIVATE);
         int myIntValue = sp.getInt("points", 0);
         score = myIntValue;
+
+
 
         //Declering Press Button and setting listener on it
         pressButton = (Button)findViewById(R.id.pressButton);
@@ -136,7 +164,12 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
 
                 }
                 else{
-                    Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
+                    if(toast != null) {
+                        toast.cancel();
+                    }                    toast = Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT);
+                    toast.show();
+
+                    //Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
                 }
 
             }
@@ -185,12 +218,16 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         leaderboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isSignedIn() || !isSignedIn()){
+                if(isSignedIn()){
                     updateLeaderboard(score);
                     showLeaderboard();
                 }
                 else{
-                    Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                    if(toast != null) {
+                        toast.cancel();
+                    }                    toast = Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT);
+                    //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                    toast.show();
                 }
             }
         });
@@ -201,7 +238,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                     showAchievements();
                 }
                 else{
-                    Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                    if(toast != null) {
+                        toast.cancel();
+                    }                    toast = Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT);
+                    //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                    toast.show();
 
                 }
             }
@@ -222,8 +263,6 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume()");
-
         // Since the state of the signed in user can change when the activity is not active
         // it is recommended to try and sign in silently from when the app resumes.
         //signInSilently();
@@ -250,34 +289,33 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         if(!isSignedIn()){
             return;
         }
-        if(score <= 5) {
+        if((score - increment) <= 5) {
             mAchievementsClient.increment(getString(R.string.achievement_5_click), increment);
         }
-        if(score <= 206) {
+        if((score - increment) <= 206) {
             mAchievementsClient.increment(getString(R.string.achievement_206_click), increment);
         }
-        if(score <= 407) {
+        if((score - increment) <= 407) {
             mAchievementsClient.increment(getString(R.string.achievement_407_click), increment);
         }
-        if(score <= 608) {
+        if((score - increment) <= 608) {
             mAchievementsClient.increment(getString(R.string.achievement_608_click), increment);
         }
-        if(score <= 809) {
+        if((score - increment) <= 809) {
             mAchievementsClient.increment(getString(R.string.achievement_809_click), increment);
         }
-        if(score <= 910) {
+        if((score - increment) <= 910) {
             mAchievementsClient.increment(getString(R.string.achievement_910_click), increment);
         }
-        if(score <= 1111) {
+        if((score - increment) <= 1111) {
             mAchievementsClient.increment(getString(R.string.achievement_1111_click), increment);
         }
-        if(score <= 1312) {
+        if((score - increment) <= 1312) {
             mAchievementsClient.increment(getString(R.string.achievement_1312_click), increment);
         }
-        if(score <= 1513) {
+        if((score - increment) <= 1513) {
             mAchievementsClient.increment(getString(R.string.achievement_1513_click), increment);
         }
-
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -325,17 +363,23 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
                         });
             }
             else{
-                Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                if(toast != null) {
+                    toast.cancel();
+                }                toast = Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT);
+                //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+                toast.show();
             }
         }
         else{
-            Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
+            if(toast != null) {
+                toast.cancel();
+            }            toast = Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT);
+            //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+            toast.show();
 
         }
     }
     protected void onDisconnected() {
-        Log.d(TAG, "onDisconnected()");
-
         mAchievementsClient = null;
         mLeaderboardsClient = null;
         mPlayersClient = null;
@@ -380,6 +424,9 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         pressButton.setText(Integer.toString(score));
         checkForAchievements(200, score);
         updateLeaderboard(score);
+        mRewardedVideoAd.loadAd("ca-app-pub-1188194874657954/2618307211",
+                new AdRequest.Builder().build());
+
     }
     @Override
     public void onRewardedVideoAdLeftApplication() {
@@ -394,6 +441,7 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
         System.out.println("onRewardedVideoAdFailedToLoad");
         mRewardedVideoAd.loadAd("ca-app-pub-1188194874657954/2618307211",
                 new AdRequest.Builder().build());
+
 
 
     }
@@ -430,7 +478,11 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
             startActivityForResult(signInIntent, RC_SIGN_IN);
         }
         else{
-            Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT).show();
+            if(toast != null) {
+                toast.cancel();
+            }            toast = Toast.makeText(MainActivity.this, "Please Connect to the Network", Toast.LENGTH_SHORT);
+            //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+            toast.show();
         }
     }
 
@@ -481,13 +533,28 @@ public class MainActivity extends AppCompatActivity implements RewardedVideoAdLi
     }
 
 
+
     //When Back button pressed show toast messages
     @Override
     public void onBackPressed() {
-        Toast.makeText(MainActivity.this,"Already leaving ?",Toast.LENGTH_SHORT).show();
-        Toast.makeText(MainActivity.this,"Stay 5 more minutes :)",Toast.LENGTH_SHORT).show();
+        if(toast != null) {
+            toast.cancel();
+        }
+        toast = Toast.makeText(MainActivity.this, "Already leaving ?", Toast.LENGTH_SHORT);
+        //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+        toast.show();
+        toast.cancel();
+        toast = Toast.makeText(MainActivity.this, "Stay 5 more minutes :)", Toast.LENGTH_SHORT);
+        //Toast.makeText(MainActivity.this, "Please Sign In", Toast.LENGTH_SHORT).show();
+        toast.show();
+        //Toast.makeText(MainActivity.this,"Already leaving ?",Toast.LENGTH_SHORT).show();
+        //Toast.makeText(MainActivity.this,"Stay 5 more minutes :)",Toast.LENGTH_SHORT).show();
 
 
     }
+
+
+
+
 
 }

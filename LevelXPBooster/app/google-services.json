@@ -15,33 +15,21 @@
       },
       "oauth_client": [
         {
-          "client_id": "441142877579-nnnv8pata43lto4jpke4bbmuat2pq2cl.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.level.xp.booster.levelxpbooster",
-            "certificate_hash": "aa096be45635705eba5a5ef9a6c3ed30b81ebc04"
-          }
-        },
-        {
-          "client_id": "441142877579-4sgagunq7adku88ivdr0g3d1adsun076.apps.googleusercontent.com",
+          "client_id": "441142877579-r4133vcl27tofmk8ik8tc1f1ip2dvqj9.apps.googleusercontent.com",
           "client_type": 3
         },
         {
-          "client_id": "441142877579-i3vak273jfjho33beibb0cl6eer76mim.apps.googleusercontent.com",
-          "client_type": 3
-        },
-        {
-          "client_id": "441142877579-rsnm2j2q6nibufros6hl9jk10hkq2r10.apps.googleusercontent.com",
+          "client_id": "441142877579-o8r9cl55thedjobbf553blv365hjlmf0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.level.xp.booster.levelxpbooster",
-            "certificate_hash": "b7f16de0a1568a9353653c6e6bbdb4a4dbb4975c"
+            "certificate_hash": "e7b315e0d87f3bf8b23750e5b4c553694ec04556"
           }
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD59p_WrDcXb8qJON9vg5pd3TJ7lVhExUc"
+          "current_key": "AIzaSyCg7Zb4HwqadSrdglZSxTu9LkJqpqYslHk"
         }
       ],
       "services": {
@@ -52,7 +40,7 @@
           "status": 2,
           "other_platform_oauth_client": [
             {
-              "client_id": "441142877579-4sgagunq7adku88ivdr0g3d1adsun076.apps.googleusercontent.com",
+              "client_id": "441142877579-r4133vcl27tofmk8ik8tc1f1ip2dvqj9.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
